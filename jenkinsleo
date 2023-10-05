@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+    tools{
+        maven 'mymvn'
+    }
+
+    stages {
+        stage('checkout the code') {
+            steps {
+                echo 'checkout the code'
+                git 'https://github.com/niladrimondal/addressbook-demo.git'
+            }
+        }
+         stage('build the code') {
+            steps {
+                script{
+                    try{
+                         echo 'build the code'
+                sh 'mvn clean package'
+                        
+                    }
+                    catch (Exception e){
+                        echo 'handling the exception'
+                        emailext body: '''Hi Developer,
+                      the job got failed during the build....
+
+Thanks,
+Devops''', subject: 'Attention: $(BULID_NAME) is failed. Please look into the build number $(BUILD_NUMBER)', to: 'jaisonleo24@gmail.com'
+                    }
+                }
+               
+            }
+        }
+         stage('deploy the code') {
+            steps {
+                echo 'deploy the code'
+                deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://18.204.16.72:8081/')], contextPath: 'addressbookleo', war: '**/*.war'
+            }
+        }
+    }
+}
